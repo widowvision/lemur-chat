@@ -1,43 +1,72 @@
+#serverlemurchat.py
+
 import socket
 import threading
+import ssl
+import random
 
-def handle_client(client_socket, addr):
+# Function to generate a unique identifier for a client
+def generate_unique_id(name):
+    return f"{random.randint(1000, 9999)}-{name}"
+
+def handle_client(client_socket, addr, clients, client_names):
+    # Generate a unique identifier for the client
+    client_id = generate_unique_id(addr[0])
+    clients[client_id] = client_socket
+    client_names[client_socket] = client_id
+
+    # Send the list of connected clients to the new client
+    client_list = ', '.join(clients.keys())
+    client_socket.send(f'Connected clients: {client_list}'.encode('utf-8'))
+
     while True:
         try:
-            # Server receives a message and checks for Client's availability
+            # Server receives a message
             message = client_socket.recv(1024).decode('utf-8')
-            if message == 'exit':
-                # Server closes the connection for the client that sent the "exit" message.
-                client_socket.close()
-                break
-            else:
-                # Server forwards the message to Client B using TLS encryption (placeholder)
-                pass
+            if message:
+                if message == 'exit':
+                    # Server closes the connection for the client
+                    client_socket.close()
+                    del clients[client_id]
+                    del client_names[client_socket]
+                    break
+                else:
+                    # Forward the message to the intended recipient
+                    target_id, msg = message.split(':', 1)
+                    if target_id in clients:
+                        clients[target_id].send(f'[{client_id}]: {msg}'.encode('utf-8'))
         except:
-            # An error occurred, close the connection
+            # Handle any exceptions
             client_socket.close()
+            del clients[client_id]
+            del client_names[client_socket]
             break
 
 def main():
+    host = 'localhost'
+    port = 1080
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('localhost', 12345))
-    server_socket.listen(5)  # Server listens for client connections
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+
+    # Wrap the server socket with SSL for encryption
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain('path/to/certfile', 'path/to/keyfile')
+    secure_socket = context.wrap_socket(server_socket, server_side=True)
+
+    print('Server is listening...')
+
+    clients = {}
+    client_names = {}
 
     while True:
-        # A client tries to establish a connection
-        client_socket, addr = server_socket.accept()
-        
-        # Connection is successful
-        if client_socket:
-            # Server assigns a unique identifier to the connected client
-            pass
+        client_socket, addr = secure_socket.accept()
+        print(f'Connected with {addr}')
 
-            # Server sends the list of connected clients to the newly connected client
-            pass
-
-            # Handle each client in a separate thread
-            client_thread = threading.Thread(target=handle_client, args=(client_socket, addr))
-            client_thread.start()
+        # Start a new thread for the client
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, addr, clients, client_names))
+        client_thread.start()
 
 if __name__ == '__main__':
     main()
