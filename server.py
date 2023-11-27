@@ -22,26 +22,36 @@ def handle_client(client_socket, addr, clients, client_names):
 
     while True:
         try:
-            # Server receives a message
             message = client_socket.recv(1024).decode('utf-8')
-            if message:
-                if message == 'exit':
-                    # Server closes the connection for the client
-                    client_socket.close()
-                    del clients[client_id]
-                    del client_names[client_socket]
-                    break
+            if not message:
+                # Client disconnected, handle it
+                break
+
+            if message == 'exit':
+                # Handle the 'exit' message specifically
+                print(f"{client_names[client_socket]} has disconnected.")
+                break
+
+            # Split the message for a regular chat message
+            try:
+                target_id, msg = message.split(':', 1)
+                if target_id in clients:
+                    clients[target_id].send(f'[{client_id}]: {msg}'.encode('utf-8'))
                 else:
-                    # Forward the message to the intended recipient
-                    target_id, msg = message.split(':', 1)
-                    if target_id in clients:
-                        clients[target_id].send(f'[{client_id}]: {msg}'.encode('utf-8'))
-        except:
-            # Handle any exceptions
-            client_socket.close()
-            del clients[client_id]
-            del client_names[client_socket]
+                    print(f"Message target {target_id} not found.")
+            except ValueError:
+                print(f"Incorrect message format from {client_id}: {message}")
+
+        except Exception as e:
+            print(f"An error occurred with {client_id}: {e}")
             break
+
+    # Clean up after disconnection
+    client_socket.close()
+    del clients[client_id]
+    del client_names[client_socket]
+    print(f"{client_id} connection closed.")
+
 
 def main():
     host = 'localhost'
