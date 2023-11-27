@@ -1,3 +1,4 @@
+
 #serverlemurchat.py
 
 import socket
@@ -52,7 +53,7 @@ def main():
 
     # Wrap the server socket with SSL for encryption
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('path/to/certfile', 'path/to/keyfile')
+    context.load_cert_chain('/Users/emmahofer/Desktop/mykeys/mycertificate.crt', '/Users/emmahofer/Desktop/mykeys/mykey.key')
     secure_socket = context.wrap_socket(server_socket, server_side=True)
 
     print('Server is listening...')
