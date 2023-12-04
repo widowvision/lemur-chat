@@ -1,8 +1,6 @@
 #clientlemurchat.py
-
 import socket
 import ssl
-import random
 import threading
 
 def listen_for_messages(secure_socket):
@@ -13,7 +11,7 @@ def listen_for_messages(secure_socket):
                 print(incoming_message)
         except OSError as e:
             if e.errno == 9:  # Bad file descriptor
-                print("Connection closed.")
+                print("\nConnection closed.")
                 break
             else:
                 raise
@@ -33,21 +31,19 @@ def main():
 
     secure_socket.connect((host, port))
 
-    # Receive and print the list of connected clients
-    client_list = secure_socket.recv(1024).decode('utf-8')
-    print(client_list)
+    username = input("Enter your username: ")
+    secure_socket.send(username.encode('utf-8'))
 
     threading.Thread(target=listen_for_messages, args=(secure_socket,)).start()
 
     try:
         while True:
-            message = input("Enter message in format 'target_id:message' or 'exit' to disconnect: ")
+            message = input("\nEnter message or 'exit' to disconnect: ")
             if message == 'exit':
-                # Send the "exit" message to the server to disconnect
                 secure_socket.send(message.encode('utf-8'))
                 break
             else:
-                # Send a message using the target client's unique identifier
+                # Broadcast message to all clients
                 secure_socket.send(message.encode('utf-8'))
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -56,3 +52,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
