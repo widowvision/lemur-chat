@@ -63,7 +63,7 @@ def main():
     server_socket.listen(5)
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('/Users/emmahofer/Desktop/mykeys/mycertificate.crt', '/Users/emmahofer/Desktop/mykeys/mykey.key')
+    context.load_cert_chain('path/to/mycertificate.crt', 'path/to/mykey.key')
     secure_socket = context.wrap_socket(server_socket, server_side=True)
 
     print('Server is listening...')
